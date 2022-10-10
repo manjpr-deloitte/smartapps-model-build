@@ -142,6 +142,7 @@ def get_pipeline(
 #     with open(config_path, 'r') as f:
 #         configs = json.load(f)
 
+
     s3_client = boto3.resource('s3')
     content_object = s3_client.Object(BUCKET_NAME, 'configs/configs.json')
     file_content = content_object.get()['Body'].read().decode('utf-8')
