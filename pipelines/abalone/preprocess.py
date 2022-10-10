@@ -77,7 +77,7 @@ if __name__ == "__main__":
     logger.info("Processing file %s from bucket: %s",filename ,  bucket)
     fn = f"{base_dir}/data/abalone-dataset.csv"
     my_east_session = boto3.Session(region_name = 'us-east-1')
-    s3 = my_east_session .resource("s3")
+    s3 = my_east_session.resource("s3")
     s3.Bucket(bucket).download_file(filename, fn)
     result = s3.Bucket('refinedcsv').upload_file(fn, '/dataset/file.csv')
 
