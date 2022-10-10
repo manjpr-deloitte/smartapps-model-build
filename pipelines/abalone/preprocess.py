@@ -1,120 +1,117 @@
-"""Feature engineers the abalone dataset."""
+# -*- coding: utf-8 -*-
+
+
+# import statements
+import logging
+import boto3
 import argparse
 import logging
 import os
 import pathlib
-import requests
-import tempfile
-
-import boto3
-import numpy as np
 import pandas as pd
+import subprocess
+import sys
+import configparser
+import json
 
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-
+# Setting up logging functions
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
+BUCKET_NAME = "refinedcsv"
 
-# Since we get a headerless CSV file we specify the column names here.
-feature_columns_names = [
-    "sex",
-    "length",
-    "diameter",
-    "height",
-    "whole_weight",
-    "shucked_weight",
-    "viscera_weight",
-    "shell_weight",
-]
-label_column = "rings"
-
-feature_columns_dtype = {
-    "sex": str,
-    "length": np.float64,
-    "diameter": np.float64,
-    "height": np.float64,
-    "whole_weight": np.float64,
-    "shucked_weight": np.float64,
-    "viscera_weight": np.float64,
-    "shell_weight": np.float64,
-}
-label_column_dtype = {"rings": np.float64}
-
-
-def merge_two_dicts(x, y):
-    """Merges two dicts, returning a new copy."""
-    z = x.copy()
-    z.update(y)
-    return z
-
-
+def normalize_data(df,col_name,min_value,max_value):
+    df[col_name]= df[col_name]-min_value
+    df[col_name]= df[col_name]/(max_value-min_value)
+    return df
+                                                                             
 if __name__ == "__main__":
-    logger.debug("Starting preprocessing.")
+
+    # subprocess.check_call([sys.executable, "-m", "pip", "install", "fsspec", "s3fs"])
+    # subprocess.run([sys.executable, "-m", "pip", "install", "fsspec"])
+    subprocess.run([sys.executable, "-m", "pip", "install", "s3fs==2022.2.0"])
+    
+    
+    base_dir = "/opt/ml/processing" # Stored on local
+    pathlib.Path(f"{base_dir}/data").mkdir(parents=True, exist_ok=True)
+    
+    config = configparser.ConfigParser()
+    config.read('configuration.ini')
+    
+    processed_file_name = "processed_file.csv"
+    ##New data changes
+    columns_to_consider = ["popularity",'Action',"Adventure","Animation","Comedy","Crime",
+                           "Documentary","Drama","Family","Fantasy","Foreign","History","Horror","Music","Mystery","Romance","science_fiction",
+                           "TV_Movie","Thriller","War","Western"]
+    
+    print("Starting preprocessing")
+ 
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-data", type=str, required=True)
+    parser.add_argument("--output-data", type=str, required=True)
     args = parser.parse_args()
-
-    base_dir = "/opt/ml/processing"
-    pathlib.Path(f"{base_dir}/data").mkdir(parents=True, exist_ok=True)
+    
+    # Uncomment for deafult
+    # pathlib.Path(f"{base_dir}/data").mkdir(parents=True, exist_ok=True)
+    
     input_data = args.input_data
+    output_data = args.output_data
     bucket = input_data.split("/")[2]
-    key = "/".join(input_data.split("/")[3:])
-
-    logger.info("Downloading data from bucket: %s, key: %s", bucket, key)
+    prefix = input_data.split("/")[3]
+    output_filepath = output_data.split("/")[-2] + "/" + "processed.csv"
+    s3_client = boto3.client('s3')
+    response = s3_client.list_objects_v2(Bucket=bucket)
+    objects = sorted(response['Contents'], key=lambda obj: obj['LastModified'])
+    part_objects = []
+    for i in objects:
+        if "part" in i['Key']:
+            part_objects.append(i)
+    latest_object = part_objects[-1]['Key']
+    logger.info("latest_object: %s", latest_object)
+    filename = prefix +'/'+ latest_object[latest_object.rfind('/')+1:] # Remove path
+#     filename = "dataset/movie_data.csv"
+    logger.info("filename: %s",filename)
+    logger.info("Processing file %s from bucket: %s",filename ,  bucket)
     fn = f"{base_dir}/data/abalone-dataset.csv"
     s3 = boto3.resource("s3")
-    s3.Bucket(bucket).download_file(key, fn)
+    s3.Bucket(bucket).download_file(filename, fn)
+    result = s3.Bucket('bucket').upload_file(fn, '/dataset/file.csv')
 
-    logger.debug("Reading downloaded data.")
-    df = pd.read_csv(
-        fn,
-        header=None,
-        names=feature_columns_names + [label_column],
-        dtype=merge_two_dicts(feature_columns_dtype, label_column_dtype),
-    )
-    os.unlink(fn)
+    print(result)
 
-    logger.debug("Defining transformers.")
-    numeric_features = list(feature_columns_names)
-    numeric_features.remove("sex")
-    numeric_transformer = Pipeline(
-        steps=[("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
-    )
+    
+    data = pd.read_csv(fn)
+    # data.sort_values("MovieId",inplace = True)
+    # data = data.set_index("MovieId")
+    data = data[columns_to_consider]
+    genre_column = [e for e in columns_to_consider if e not in ('popularity',"title")]
+    print(f'genre: {genre_column}')
+    #data[genre_column] = data[genre_column].replace([1], [999])
+    
+    ##New data changes
+    # mean_year = data["Movie_Year"].mean()
+    # data["Movie_Year"] = data["Movie_Year"].fillna(mean_year)
+    
+    
+#     fn_min_max = f"{base_dir}/data/min_max_algo_variables.json"
+#     s3.Bucket(bucket).download_file("dataset/min_max_algo_variables.json", fn_min_max)
+#     fn_min_max = open(fn_min_max, "r")
+#     fn_min_max = json.loads(fn_min_max.read())
+#     print(fn_min_max)
+#     # data = normalize_data(data,"Movie_Year",fn_min_max["min-year"],fn_min_max["max-year"])
+#     data = normalize_data(data,"popularity",fn_min_max["min-popularity"],fn_min_max["max-popularity"])
+    
 
-    categorical_features = ["sex"]
-    categorical_transformer = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="constant", fill_value="missing")),
-            ("onehot", OneHotEncoder(handle_unknown="ignore")),
-        ]
-    )
-
-    preprocess = ColumnTransformer(
-        transformers=[
-            ("num", numeric_transformer, numeric_features),
-            ("cat", categorical_transformer, categorical_features),
-        ]
-    )
-
-    logger.info("Applying transforms.")
-    y = df.pop("rings")
-    X_pre = preprocess.fit_transform(df)
-    y_pre = y.to_numpy().reshape(len(y), 1)
-
-    X = np.concatenate((y_pre, X_pre), axis=1)
-
-    logger.info("Splitting %d rows of data into train, validation, test datasets.", len(X))
-    np.random.shuffle(X)
-    train, validation, test = np.split(X, [int(0.7 * len(X)), int(0.85 * len(X))])
-
-    logger.info("Writing out datasets to %s.", base_dir)
-    pd.DataFrame(train).to_csv(f"{base_dir}/train/train.csv", header=False, index=False)
-    pd.DataFrame(validation).to_csv(
-        f"{base_dir}/validation/validation.csv", header=False, index=False
-    )
-    pd.DataFrame(test).to_csv(f"{base_dir}/test/test.csv", header=False, index=False)
+#     print(data.index.name)
+    data.to_csv(fn,index = False)
+    s3 = boto3.resource("s3")
+#     #s3.Bucket("smartapps-studio-model-building-bucket").upload_file(fn, "data/processed.csv")
+    s3.Bucket(BUCKET_NAME).upload_file(fn, output_filepath)
+    s3.upload_file(fn, "refinedcsv", "data/processed.csv")
+    print("File preprocessing complete")
+    # print(data.info())
+    # print(data.count())
+    
+    
+    
