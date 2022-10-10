@@ -185,7 +185,7 @@ def get_pipeline(
     sklearn = SKLearn(
         entry_point= script_path,
         framework_version=FRAMEWORK_VERSION,
-        instance_type="ml.t3.medium",
+        instance_type="ml.m4.xlarge",
         role=role,
         sagemaker_session=sagemaker_session,
         source_dir = "s3://"+BUCKET_NAME+"/model/model_trainer.tar.gz",
@@ -215,7 +215,7 @@ def get_pipeline(
         response_types=["application/json"],
 
         inference_instances=["ml.t2.large"],
-        transform_instances=["ml.t3.medium"],
+        transform_instances=["ml.m4.xlarge"],
         model_package_group_name=model_package_group_name,
         approval_status="Approved",
     )
