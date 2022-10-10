@@ -60,7 +60,7 @@ if __name__ == "__main__":
     bucket = input_data.split("/")[2]
     prefix = input_data.split("/")[3]
     output_filepath = output_data.split("/")[-2] + "/" + "processed.csv"
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client('s3',region_name="us-east-1")
     response = s3_client.list_objects_v2(Bucket=bucket)
     objects = sorted(response['Contents'], key=lambda obj: obj['LastModified'])
     part_objects = []
