@@ -60,16 +60,18 @@ if __name__ == "__main__":
     bucket = input_data.split("/")[2]
     prefix = input_data.split("/")[3]
     output_filepath = output_data.split("/")[-2] + "/" + "processed.csv"
-    s3_client = boto3.client('s3',region_name="us-east-1")
-    response = s3_client.list_objects_v2(Bucket=bucket)
-    objects = sorted(response['Contents'], key=lambda obj: obj['LastModified'])
-    part_objects = []
-    for i in objects:
-        if "part" in i['Key']:
-            part_objects.append(i)
-    latest_object = part_objects[-1]['Key']
-    logger.info("latest_object: %s", latest_object)
-    filename = prefix +'/'+ latest_object[latest_object.rfind('/')+1:] # Remove path
+    # s3_client = boto3.client('s3')
+    # response = s3_client.list_objects_v2(Bucket=bucket)
+    # objects = sorted(response['Contents'], key=lambda obj: obj['LastModified'])
+    # part_objects = []
+    # for i in objects:
+    #     if "part" in i['Key']:
+    #         part_objects.append(i)
+    # # latest_object = part_objects[-1]['Key']
+    # filename = "csv/part-00000-d409a910-40d0-4943-991b-ce23c113dec8-c000.csv"
+    # logger.info("latest_object: %s", latest_object)
+    # filename = prefix +'/'+ latest_object[latest_object.rfind('/')+1:] # Remove path
+    filename = "csv/part-00000-d409a910-40d0-4943-991b-ce23c113dec8-c000.csv"
 #     filename = "dataset/movie_data.csv"
     logger.info("filename: %s",filename)
     logger.info("Processing file %s from bucket: %s",filename ,  bucket)
