@@ -196,7 +196,7 @@ def get_pipeline(
         estimator=sklearn,
     )
     
-#    step_train.add_depends_on([step_process])
+    step_train.add_depends_on([step_process])
     
     
     
