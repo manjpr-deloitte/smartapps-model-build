@@ -185,7 +185,7 @@ def get_pipeline(
     sklearn = SKLearn(
         entry_point= script_path,
         framework_version=FRAMEWORK_VERSION,
-        instance_type="m4.xlarge",
+        instance_type="ml.m4.xlarge",
         role=role,
         sagemaker_session=sagemaker_session,
         source_dir = "s3://"+BUCKET_NAME+"/model/model_trainer.tar.gz",
