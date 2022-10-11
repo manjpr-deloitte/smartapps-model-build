@@ -199,6 +199,7 @@ def get_pipeline(
 #    step_train.add_depends_on([step_process])
     
     
+    
     sklearn_model = SKLearnModel(
     model_data =  "s3://"+BUCKET_NAME+"/model_artifact/model.tar.gz",
     source_dir= "s3://"+BUCKET_NAME+"/model/model_trainer.tar.gz",
