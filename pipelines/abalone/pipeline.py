@@ -196,7 +196,7 @@ def get_pipeline(
         estimator=sklearn,
     )
     
-    step_train.add_depends_on([step_process])
+#    step_train.add_depends_on([step_process])
     
     
     sklearn_model = SKLearnModel(
@@ -304,7 +304,7 @@ def get_pipeline(
         parameters=[
         ],
         # steps=[step_process, step_train, step_eval, step_cond],
-        steps=[step_process, step_train],
+        steps=[step_train],
         sagemaker_session=sagemaker_session,
     )
 
