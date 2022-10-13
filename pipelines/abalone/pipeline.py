@@ -217,7 +217,7 @@ def get_pipeline(
         content_types=["application/json"],
         response_types=["application/json"],
 
-        inference_instances=["ml.t2.large"],
+        inference_instances=["ml.m4.xlarge"],
         transform_instances=["ml.m4.xlarge"],
         model_package_group_name=model_package_group_name,
         approval_status="Approved",
