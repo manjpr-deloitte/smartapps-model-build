@@ -78,6 +78,7 @@ def get_session(region, default_bucket):
         default_bucket=default_bucket,
     )
 
+
 def get_pipeline_custom_tags(new_tags, region, sagemaker_project_arn=None):
     try:
         sm_client = get_sagemaker_client(region)
@@ -299,7 +300,7 @@ def get_pipeline(
         conditions=[cond_lte],
         if_steps=[step_register],
         else_steps=[],
-        depends_on = [step_eval],
+        depends_on = [step_train],
     )
     
     pipeline = Pipeline(
@@ -307,7 +308,7 @@ def get_pipeline(
         parameters=[
         ],
         # steps=[step_process, step_train, step_eval, step_cond],
-        steps=[step_process,step_train],
+        steps=[step_process,step_train,step_cond],
         sagemaker_session=sagemaker_session,
     )
 
