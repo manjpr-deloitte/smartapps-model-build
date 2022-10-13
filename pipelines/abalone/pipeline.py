@@ -308,7 +308,7 @@ def get_pipeline(
         parameters=[
         ],
         # steps=[step_process, step_train, step_eval, step_cond],
-        steps=[step_process,step_train,step_cond],
+        steps=[step_process,step_train,step_register],
         sagemaker_session=sagemaker_session,
     )
 
